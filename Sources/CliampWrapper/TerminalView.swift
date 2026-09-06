@@ -394,11 +394,10 @@ final class TerminalView: NSView, NSTextInputClient {
         default: return
         }
 
-        // Reassemble a surrogate pair delivered in two halves. A half on its
-        // own becomes empty text rather than an early return: the key event
-        // that carried it must still be accounted for below, otherwise
-        // keyDown falls back to sending the raw keystroke. A lone lead that
-        // is not followed by its trail is dropped, like Terminal.app.
+        // Unicode Hex Input delivers astral characters as two insertText
+        // calls, one per UTF-16 half. Hold the lead half and join it with the
+        // trail. A half on its own becomes empty text, not an early return,
+        // so the key event that carried it is still accounted for below.
         let unit = value.length == 1 ? value.character(at: 0) : nil
         let text: String
         if let unit, UTF16.isLeadSurrogate(unit) {
@@ -478,12 +477,9 @@ final class TerminalView: NSView, NSTextInputClient {
         }
     }
 
-    /// Reached for chords AppKit maps to editing commands (Cmd+Period ->
-    /// cancel:) and for keys interpretKeyEvents cannot turn into text. The
-    /// latter are already forwarded by keyDown; swallowing them here only
-    /// prevents the beep. If performKeyEquivalent deferred this exact event,
-    /// send it back through the event system so it reaches keyDown and is
-    /// encoded.
+    /// Swallows the editing commands AppKit derives from key chords (keyDown
+    /// already forwarded the keys) so they don't beep. If performKeyEquivalent
+    /// deferred this exact event, resend it so it reaches keyDown.
     override func doCommand(by selector: Selector) {
         if let lastPerformKeyEvent,
            let current = NSApp.currentEvent,

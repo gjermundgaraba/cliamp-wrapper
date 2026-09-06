@@ -40,9 +40,8 @@ then `PATH`. Set `CLIAMP_WRAPPER_EXEC` to use a specific executable:
 CLIAMP_WRAPPER_EXEC=/path/to/cliamp build/Cliamp.app/Contents/MacOS/Cliamp
 ```
 
-Search paths and the override expand `~` and resolve relative to the wrapper's
-launch directory. Empty `PATH` entries refer to that directory. The child gets
-the same normalized search path and starts in the user's home directory.
+Paths may use `~`. cliamp starts in your home directory with the same search
+path.
 
 A shell launcher records cliamp's exit status in a temporary file. Status 0
 quits the app; other or unavailable statuses leave the output visible with a
@@ -57,13 +56,12 @@ itself implements work, for example `font-family`, `font-size`, `theme`,
 only Ghostty's own app implements (tabs, splits, window state, initial
 window size) have no effect; the window remembers its last frame instead.
 
-The command is set on the surface. Config-file `command` settings are ignored;
-`initial-command` must not be set.
+`command` and `initial-command` are managed by the wrapper and must not be set.
 
 Default Ghostty keybindings are cleared. Copy, paste, select all, font size and
 full screen are menu items with the usual shortcuts.
 
-Light/dark theme pairs (`theme = light:…,dark:…`) follow the system appearance.
+Light/dark theme pairs (`theme = light:NAME,dark:NAME`) follow the system appearance.
 The titlebar follows the terminal background. Config files are
 loaded at launch; appearance changes reapply that config without rereading files.
 
@@ -88,17 +86,9 @@ The embedder API is unstable. Its declarations are in
 [ghostty.h](vendor/ghostty/include/ghostty.h); updating the submodule may require
 changes to the Swift callbacks.
 
-## Source layout
-
-- [AppDelegate.swift](Sources/CliampWrapper/AppDelegate.swift): window, menus and app lifecycle.
-- [GhosttyHost.swift](Sources/CliampWrapper/GhosttyHost.swift): libghostty ownership, configuration and runtime callbacks.
-- [TerminalView.swift](Sources/CliampWrapper/TerminalView.swift), [Input.swift](Sources/CliampWrapper/Input.swift) and [Clipboard.swift](Sources/CliampWrapper/Clipboard.swift): rendering surface and input integration.
-- [CommandResolver.swift](Sources/CliampWrapper/CommandResolver.swift): executable lookup and launcher.
-- [WrapperConfig.swift](Sources/CliampWrapper/WrapperConfig.swift): app defaults.
-- [TitleToolbar.swift](Sources/CliampWrapper/TitleToolbar.swift): centered window title.
-- [scripts/](scripts/): GhosttyKit build and app packaging; [Package.swift](Package.swift) links the xcframework.
-- [Tests/](Tests/): command lookup, modifier handling and theme tests.
-
 ## License
 
-MIT. The app icon is cliamp's own artwork, also MIT.
+MIT. The terminal input handling is adapted from
+[Ghostty](https://github.com/ghostty-org/ghostty) (MIT, copyright Mitchell
+Hashimoto and Ghostty contributors). The app icon is cliamp's own artwork,
+also MIT.

@@ -4,8 +4,7 @@ INSTALL_DIR ?= /Applications
 
 all: app
 
-# Build libghostty (full embedder API) from the Ghostty submodule. Zig caches
-# the work, so this is a few seconds when nothing changed.
+# Zig caches its work, so this takes a few seconds when nothing changed.
 ghosttykit:
 	scripts/build-ghosttykit.sh
 

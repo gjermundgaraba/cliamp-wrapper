@@ -11,6 +11,7 @@ final class GhosttyHost {
         case configNew
         case appNew
         case surfaceNew
+        case notInitialized
 
         var errorDescription: String? {
             switch self {
@@ -18,6 +19,7 @@ final class GhosttyHost {
             case .configNew: return "ghostty_config_new failed"
             case .appNew: return "ghostty_app_new failed"
             case .surfaceNew: return "ghostty_surface_new failed"
+            case .notInitialized: return "initialize() must be called before createSurface()"
             }
         }
     }
@@ -43,10 +45,7 @@ final class GhosttyHost {
     // MARK: - Lifecycle
 
     /// Initialises libghostty, loads the bundled (and optional user) config,
-    /// and creates the app. The command is not part of the config: it is set
-    /// on the surface. Only `initial-command`, which the core prefers for the
-    /// first surface, could still replace it; it is reserved and documented
-    /// as such.
+    /// and creates the app. The command is set on the surface, not in the config.
     func initialize(launch: CommandResolver.Launch, userConfigPath: String = WrapperConfig.userConfigPath) throws {
         self.launch = launch
 
@@ -134,7 +133,7 @@ final class GhosttyHost {
 
     /// Creates the terminal surface bound to `view` and starts the command.
     func createSurface(in view: TerminalView, window: NSWindow) throws {
-        guard let app, let launch else { throw InitError.appNew }
+        guard let app, let launch else { throw InitError.notInitialized }
         self.view = view
         self.window = window
 
@@ -217,11 +216,10 @@ final class GhosttyHost {
     }
 
     /// Runs a keybinding action by name, e.g. `copy_to_clipboard`.
-    @discardableResult
-    func perform(_ action: String) -> Bool {
-        guard let surface else { return false }
-        return action.withCString { ptr in
-            ghostty_surface_binding_action(surface, ptr, UInt(action.utf8.count))
+    func perform(_ action: String) {
+        guard let surface else { return }
+        action.withCString { ptr in
+            _ = ghostty_surface_binding_action(surface, ptr, UInt(action.utf8.count))
         }
     }
 
@@ -370,10 +368,9 @@ final class GhosttyHost {
         return status
     }
 
-    /// Non-modal banner above the terminal. A sheet would block Cmd+Q and
-    /// Apple Event quits; this leaves the key handling untouched so any key
+    /// Non-modal banner above the terminal, so Cmd+Q still works and any key
     /// still closes the surface as libghostty expects. The terminal view is
-    /// shrunk to make room so the program's last output stays readable.
+    /// shrunk to keep the program's last output readable.
     private func showExitBanner(status: Int32) {
         guard let window, let content = window.contentView, let view else { return }
 

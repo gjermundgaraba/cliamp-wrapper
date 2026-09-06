@@ -1,9 +1,5 @@
 #!/usr/bin/env bash
-# Builds vendor/ghostty/macos/GhosttyKit.xcframework (the full libghostty
-# embedder API: VT core, Metal renderer, PTY, input) from the Ghostty
-# submodule. Zig caches everything, so re-running with no changes takes a
-# few seconds. Ghostty main pins an exact Zig minor (build.zig.zon) and its
-# build fails with a clear message on any other version.
+# Builds vendor/ghostty/macos/GhosttyKit.xcframework from the Ghostty submodule.
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"

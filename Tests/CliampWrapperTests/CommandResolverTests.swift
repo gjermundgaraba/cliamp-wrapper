@@ -44,10 +44,10 @@ final class CommandResolverTests: XCTestCase {
     func testRelativeInheritedPATHFindsExecutable() throws {
         let root = try temporaryDirectory()
         defer { try? FileManager.default.removeItem(at: root) }
-        let binary = try executable(in: root.appendingPathComponent("player's tools"))
+        let binary = try executable(in: root.appendingPathComponent("user's tools"))
 
         let launch = try XCTUnwrap(CommandResolver.resolveLaunch(
-            environment: ["PATH": "./player's tools"], workingDirectory: root.path,
+            environment: ["PATH": "./user's tools"], workingDirectory: root.path,
             extraPathEntries: []))
 
         XCTAssertEqual(launch.environment[CommandResolver.execEnv], binary.path)
@@ -67,7 +67,7 @@ final class CommandResolverTests: XCTestCase {
 
     func testExplicitMissingPathIsAbsoluteAndStillLaunches() throws {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
-        let relative = "missing tools/player's binary"
+        let relative = "missing tools/user's cliamp"
 
         let launch = try XCTUnwrap(CommandResolver.resolveLaunch(
             environment: [CommandResolver.execEnv: relative, "PATH": ""],
@@ -81,12 +81,12 @@ final class CommandResolverTests: XCTestCase {
 
     func testTildeExpansionAndMissingPATHDefaults() throws {
         let launch = try XCTUnwrap(CommandResolver.resolveLaunch(
-            environment: [CommandResolver.execEnv: "~/wrapper-missing-player"],
+            environment: [CommandResolver.execEnv: "~/missing-cliamp"],
             workingDirectory: "/tmp", extraPathEntries: ["~/.local/bin"]))
         let home = FileManager.default.homeDirectoryForCurrentUser
 
         XCTAssertEqual(launch.environment[CommandResolver.execEnv],
-                       home.appendingPathComponent("wrapper-missing-player").path)
+                       home.appendingPathComponent("missing-cliamp").path)
         XCTAssertEqual(launch.environment["PATH"],
                        home.appendingPathComponent(".local/bin").path
                        + ":/usr/bin:/bin:/usr/sbin:/sbin")

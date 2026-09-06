@@ -26,11 +26,8 @@ enum Clipboard {
         }
 
         let hasText = pasteboard.types?.contains(.string) ?? false
-        var wantsText = false
-        if let mimes {
-            for i in 0..<mimesLen where mimes[i].map({ String(cString: $0) }) == textMime {
-                wantsText = true
-            }
+        let wantsText = (0..<mimesLen).contains { i in
+            mimes?[i].map { String(cString: $0) } == textMime
         }
 
         let text = wantsText && hasText ? pasteboard.string(forType: .string) : nil
