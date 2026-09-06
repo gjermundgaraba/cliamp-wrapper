@@ -183,25 +183,13 @@ open -na Ghostty.app --args \
 
 ## Config knobs that matter for a single-TUI wrapper
 
-Ship a Ghostty config with the app and load it explicitly (routes 1-3) or via
-`--config-file` (route 4):
+The wrapper's [bundled configuration](../Resources/ghostty.conf) is the
+authoritative example; see the [README](../README.md#configuration) for loading
+and override behavior. The wrapper sets its command on the surface.
 
-```ini
-command = direct:/Applications/MyApp.app/Contents/Resources/my-tui
-# `direct:` skips /bin/sh; use `shell:` if you need $HOME, globs, quoting.
-wait-after-command = false
-confirm-close-surface = false
-quit-after-last-window-closed = true
-abnormal-command-exit-runtime = 250    # ms; suppress "exited too fast" noise
-title = My App                          # forces title, ignores OSC 2
-term = xterm-256color                   # if you do not ship the xterm-ghostty terminfo
-shell-integration = none                # you are not running a shell
-window-padding-x = 8
-window-padding-y = 8
-macos-titlebar-style = transparent      # or hidden
-font-family = JetBrains Mono
-theme = catppuccin-mocha                # bundle the theme file when embedding
-```
+For other embedders, load a bundled config explicitly (routes 1-3), or pass
+`--config-file` when launching Ghostty.app (route 4). A config-level command can
+use `direct:/path/to/tui` to skip the shell, or `shell:` for shell expansion.
 
 Things to remember:
 

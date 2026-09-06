@@ -182,10 +182,9 @@ final class TerminalView: NSView, NSTextInputClient {
 
         // Keybindings configured in ghostty.conf win over everything.
         var keyEvent = event.ghosttyKeyEvent(GHOSTTY_ACTION_PRESS)
-        var flags = ghostty_binding_flags_e(0)
         let isBinding = (event.characters ?? "").withCString { ptr -> Bool in
             keyEvent.text = ptr
-            return ghostty_surface_key_is_binding(surface, keyEvent, &flags)
+            return ghostty_surface_key_is_binding(surface, keyEvent, nil)
         }
         if isBinding {
             keyDown(with: event)
@@ -302,11 +301,11 @@ final class TerminalView: NSView, NSTextInputClient {
             // The IME committed text while handling this key; send the text
             // on its own. The key that caused the commit is only replayed if
             // the program still needs to see it (navigation keys).
-            for text in texts where !text.isEmpty && !(composing && Input.isControlText(text)) {
-                _ = sendCommittedText(action, text: text)
+            for text in texts where !text.isEmpty && !Input.isControlText(text) {
+                sendCommittedText(action, text: text)
             }
             if Self.shouldReplayCommittedPreeditKey(translationEvent) {
-                _ = sendKey(action, event: event, translationEvent: translationEvent)
+                sendKey(action, event: event, translationEvent: translationEvent)
             }
             return
         }
@@ -315,11 +314,11 @@ final class TerminalView: NSView, NSTextInputClient {
             // An empty entry is a surrogate half held back by insertText;
             // the key that carried it must not be encoded on its own.
             for text in texts where !text.isEmpty && !(composing && Input.isControlText(text)) {
-                _ = sendKey(action, event: event, translationEvent: translationEvent, text: text)
+                sendKey(action, event: event, translationEvent: translationEvent, text: text)
             }
         } else {
             if composing && Input.isControlText(event.characters) { return }
-            _ = sendKey(
+            sendKey(
                 action,
                 event: event,
                 translationEvent: translationEvent,
@@ -331,13 +330,13 @@ final class TerminalView: NSView, NSTextInputClient {
     override func keyUp(with event: NSEvent) {
         // Releases are never marked composing: the encoder drops composing
         // events, which would leave a key pressed under kitty release reporting.
-        _ = sendKey(GHOSTTY_ACTION_RELEASE, event: event)
+        sendKey(GHOSTTY_ACTION_RELEASE, event: event)
     }
 
     override func flagsChanged(with event: NSEvent) {
         guard !hasMarkedText(),
               let action = Input.modifierAction(keyCode: event.keyCode, flags: event.modifierFlags) else { return }
-        _ = sendKey(action, event: event)
+        sendKey(action, event: event)
     }
 
     private func sendKey(
@@ -346,17 +345,17 @@ final class TerminalView: NSView, NSTextInputClient {
         translationEvent: NSEvent? = nil,
         text: String? = nil,
         composing: Bool = false
-    ) -> Bool {
-        guard let surface else { return false }
+    ) {
+        guard let surface else { return }
         var keyEvent = event.ghosttyKeyEvent(action, translationMods: translationEvent?.modifierFlags)
         keyEvent.composing = composing
         if let text = text?.keyEventText {
             return text.withCString { ptr in
                 keyEvent.text = ptr
-                return ghostty_surface_key(surface, keyEvent)
+                _ = ghostty_surface_key(surface, keyEvent)
             }
         }
-        return ghostty_surface_key(surface, keyEvent)
+        _ = ghostty_surface_key(surface, keyEvent)
     }
 
     /// Arrow keys that commit a preedit still mean "move" to the program.
@@ -373,13 +372,13 @@ final class TerminalView: NSView, NSTextInputClient {
         }
     }
 
-    private func sendCommittedText(_ action: ghostty_input_action_e, text: String) -> Bool {
-        guard let surface else { return false }
+    private func sendCommittedText(_ action: ghostty_input_action_e, text: String) {
+        guard let surface else { return }
         var keyEvent = ghostty_input_key_s()
         keyEvent.action = action
-        return text.withCString { ptr in
+        text.withCString { ptr in
             keyEvent.text = ptr
-            return ghostty_surface_key(surface, keyEvent)
+            _ = ghostty_surface_key(surface, keyEvent)
         }
     }
 
@@ -424,7 +423,7 @@ final class TerminalView: NSView, NSTextInputClient {
         // there is no key event to attach to. Still send it as a key event so
         // the program sees typed input rather than a paste.
         if !text.isEmpty {
-            _ = sendCommittedText(GHOSTTY_ACTION_PRESS, text: text)
+            sendCommittedText(GHOSTTY_ACTION_PRESS, text: text)
         }
     }
 
@@ -539,7 +538,7 @@ final class TerminalView: NSView, NSTextInputClient {
 
     private func sendMouseButton(_ state: ghostty_input_mouse_state_e, _ event: NSEvent) -> Bool {
         guard let surface else { return false }
-        let index = Int(event.buttonNumber)
+        let index = event.buttonNumber
         let button = Self.mouseButtons.indices.contains(index) ? Self.mouseButtons[index] : GHOSTTY_MOUSE_UNKNOWN
         return ghostty_surface_mouse_button(surface, state, button, Input.mods(event.modifierFlags))
     }

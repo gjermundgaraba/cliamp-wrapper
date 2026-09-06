@@ -43,7 +43,6 @@ enum Clipboard {
     }
 
     static func confirmRead(
-        confirm: UnsafePointer<ghostty_clipboard_confirm_s>?,
         state: UnsafeMutableRawPointer?,
         request: ghostty_clipboard_request_e
     ) {

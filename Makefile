@@ -9,15 +9,12 @@ all: app
 ghosttykit:
 	scripts/build-ghosttykit.sh
 
-# Compile the Swift app only (no bundle).
 build: ghosttykit
 	swift build -c release --product CliampWrapper
 
-# Assemble build/Cliamp.app.
 app: ghosttykit
 	scripts/bundle-app.sh
 
-# Copy build/Cliamp.app into $(INSTALL_DIR), replacing any previous copy.
 install: app
 	mkdir -p "$(INSTALL_DIR)"
 	rm -rf "$(INSTALL_DIR)/Cliamp.app"

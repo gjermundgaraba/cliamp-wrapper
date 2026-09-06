@@ -12,8 +12,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
 
         guard let launch = CommandResolver.resolveLaunch() else {
             fail(
-                "\(WrapperConfig.tuiName) was not found",
-                detail: "Install \(WrapperConfig.tuiName) (for example with `brew install bjarneo/cliamp/cliamp`) "
+                "\(WrapperConfig.command) was not found",
+                detail: "Install \(WrapperConfig.command) (for example with `brew install bjarneo/cliamp/cliamp`) "
                     + "or set \(CommandResolver.execEnv) to its path.")
             return
         }

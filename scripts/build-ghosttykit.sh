@@ -29,7 +29,3 @@ echo "==> zig $("$ZIG" version) building GhosttyKit.xcframework from ghostty $(g
     cd "$GHOSTTY"
     "$ZIG" build -Doptimize=ReleaseFast -Demit-macos-app=false -Dxcframework-target=native
 )
-
-test -d "$GHOSTTY/macos/GhosttyKit.xcframework"
-test -d "$GHOSTTY/zig-out/share/terminfo"
-test -d "$GHOSTTY/zig-out/share/ghostty"

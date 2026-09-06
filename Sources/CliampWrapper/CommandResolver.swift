@@ -1,6 +1,6 @@
 import Foundation
 
-/// Locates the TUI binary and describes how libghostty should launch it.
+/// Locates the cliamp binary and describes how libghostty should launch it.
 enum CommandResolver {
     /// Environment variable carrying the resolved executable path into the
     /// launcher script. Setting it before launch also overrides the search.
@@ -14,15 +14,13 @@ enum CommandResolver {
         /// Shell command for the surface. libghostty always runs a per-surface
         /// command through a shell and keeps the surface open after it exits.
         let command: String
-        /// Extra environment for the child process.
         let environment: [String: String]
-        /// File the real exit status is written to.
         let statusFile: String
     }
 
     /// Ghostty on macOS runs every command under `/usr/bin/login`, which
     /// always exits 0, so the exit code libghostty reports is useless. The
-    /// launcher runs the TUI from a POSIX sh, records `$?` to a file and
+    /// launcher runs cliamp from a POSIX sh, records `$?` to a file and
     /// exits with the same status. `/usr/bin/env` in front keeps Ghostty's
     /// `exec -l` from turning sh into a login shell that reads profiles.
     ///
@@ -50,7 +48,6 @@ enum CommandResolver {
             command: "/usr/bin/env /bin/sh -c '\(launcherScript)'",
             environment: [
                 "PATH": directories.joined(separator: ":"),
-                "CLIAMP_WRAPPER": "1",
                 execEnv: executable,
                 statusFileEnv: statusFile,
             ],
@@ -67,8 +64,11 @@ enum CommandResolver {
         }
         for directory in directories {
             let candidate = URL(fileURLWithPath: directory, isDirectory: true)
-                .appendingPathComponent(WrapperConfig.tuiName).path
-            if FileManager.default.isExecutableFile(atPath: candidate) {
+                .appendingPathComponent(WrapperConfig.command).path
+            var isDirectory: ObjCBool = false
+            if FileManager.default.fileExists(atPath: candidate, isDirectory: &isDirectory),
+               !isDirectory.boolValue,
+               FileManager.default.isExecutableFile(atPath: candidate) {
                 return candidate
             }
         }

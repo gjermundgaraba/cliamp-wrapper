@@ -39,7 +39,6 @@ cp "$ROOT/Resources/ghostty.conf" "$CONTENTS/Resources/ghostty.conf"
 cp -R "$SHARE/terminfo" "$CONTENTS/Resources/terminfo"
 cp -R "$SHARE/ghostty" "$CONTENTS/Resources/ghostty"
 
-# App icon from Resources/icon.png
 ICONSET="$(mktemp -d)/AppIcon.iconset"
 mkdir -p "$ICONSET"
 for size in 16 32 128 256 512; do

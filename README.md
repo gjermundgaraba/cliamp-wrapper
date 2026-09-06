@@ -70,7 +70,7 @@ itself implements work, for example `font-family`, `font-size`, `theme`,
 only Ghostty's own app implements (tabs, splits, window state, initial
 window size) have no effect; the window remembers its last frame instead.
 
-Default keybinds are cleared so the TUI sees every key. Copy, paste, select
+Default keybinds are cleared so cliamp sees every key. Copy, paste, select
 all, font size and full screen are menu items with the usual shortcuts.
 
 Light/dark theme pairs (`theme = light:…,dark:…`) follow the system appearance.
@@ -100,3 +100,7 @@ compare `vendor/ghostty/include/ghostty.h` against the callbacks in
 
 See `docs/ghostty-wrapper-research.md` for the survey of alternative
 approaches (libghostty-spm, Trolley, driving Ghostty.app directly).
+
+## License
+
+MIT. The app icon is cliamp's own artwork, also MIT.

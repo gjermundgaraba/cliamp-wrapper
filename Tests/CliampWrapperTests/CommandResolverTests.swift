@@ -23,6 +23,24 @@ final class CommandResolverTests: XCTestCase {
         ].joined(separator: ":"))
     }
 
+    func testLookupSkipsDirectoryAndFindsExecutableSymlink() throws {
+        let root = try temporaryDirectory()
+        defer { try? FileManager.default.removeItem(at: root) }
+        try FileManager.default.createDirectory(
+            at: root.appendingPathComponent("first/cliamp"), withIntermediateDirectories: true)
+        let binary = try executable(in: root.appendingPathComponent("target"))
+        let later = root.appendingPathComponent("later")
+        try FileManager.default.createDirectory(at: later, withIntermediateDirectories: true)
+        let link = later.appendingPathComponent("cliamp")
+        try FileManager.default.createSymbolicLink(at: link, withDestinationURL: binary)
+
+        let launch = try XCTUnwrap(CommandResolver.resolveLaunch(
+            environment: ["PATH": "first:later"], workingDirectory: root.path,
+            extraPathEntries: []))
+
+        XCTAssertEqual(launch.environment[CommandResolver.execEnv], link.path)
+    }
+
     func testRelativeInheritedPATHFindsExecutable() throws {
         let root = try temporaryDirectory()
         defer { try? FileManager.default.removeItem(at: root) }
@@ -48,8 +66,7 @@ final class CommandResolverTests: XCTestCase {
     }
 
     func testExplicitMissingPathIsAbsoluteAndStillLaunches() throws {
-        let root = try temporaryDirectory()
-        defer { try? FileManager.default.removeItem(at: root) }
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         let relative = "missing tools/player's binary"
 
         let launch = try XCTUnwrap(CommandResolver.resolveLaunch(

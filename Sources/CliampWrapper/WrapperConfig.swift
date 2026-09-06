@@ -1,21 +1,20 @@
 import Foundation
 import os
 
-/// Static knobs for this wrapper. Change these (or the bundled
-/// Resources/ghostty.conf) to wrap a different TUI.
+/// Constants shared across the wrapper.
 enum WrapperConfig {
-    /// Initial window title and menu labels. The TUI may change the title
+    /// Initial window title and menu labels. cliamp may change the title
     /// with the usual escape sequence.
     static let appName = "Cliamp"
 
-    /// Executable name of the TUI to run.
-    static let tuiName = "cliamp"
+    /// Executable name searched for in `extraPathEntries` and `PATH`.
+    static let command = "cliamp"
 
     /// Optional per-user Ghostty config loaded after the bundled one.
     static let userConfigPath = "~/.config/cliamp-wrapper/ghostty.conf"
 
     /// Directories prepended to PATH for the child process and searched for
-    /// the TUI binary.
+    /// the cliamp binary.
     static let extraPathEntries = ["~/.local/bin", "/opt/homebrew/bin", "/usr/local/bin"]
 
     /// Window content size in points on first launch; later launches restore

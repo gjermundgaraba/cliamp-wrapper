@@ -102,8 +102,8 @@ final class GhosttyHost {
             read_clipboard_cb: { _, location, state, mimes, mimesLen, list in
                 Clipboard.read(location: location, state: state, mimes: mimes, mimesLen: mimesLen, list: list)
             },
-            confirm_read_clipboard_cb: { _, confirm, state, request in
-                Clipboard.confirmRead(confirm: confirm, state: state, request: request)
+            confirm_read_clipboard_cb: { _, _, state, request in
+                Clipboard.confirmRead(state: state, request: request)
             },
             write_clipboard_cb: { _, location, content, len, confirm in
                 Clipboard.write(location: location, content: content, len: len, confirm: confirm)
@@ -388,7 +388,7 @@ final class GhosttyHost {
         banner.layer?.backgroundColor = NSColor.systemRed.cgColor
 
         let label = NSTextField(labelWithString:
-            "\(WrapperConfig.tuiName) exited with status \(status). Press any key or \u{2318}Q to quit.")
+            "\(WrapperConfig.command) exited with status \(status). Press any key or \u{2318}Q to quit.")
         label.translatesAutoresizingMaskIntoConstraints = false
         label.textColor = .white
         label.font = .systemFont(ofSize: 13, weight: .semibold)
