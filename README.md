@@ -5,6 +5,8 @@ inside an embedded [Ghostty](https://ghostty.org) terminal. Written in
 Swift/AppKit for macOS 26 on Apple Silicon. Ghostty is built from the revision
 pinned by the `vendor/ghostty` submodule; cliamp is installed separately.
 
+![cliamp playing in the wrapper](docs/screenshot.png)
+
 ## Requirements
 
 - macOS 26, Xcode 26 with the Metal toolchain
