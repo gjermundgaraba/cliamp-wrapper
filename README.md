@@ -1,80 +1,70 @@
 # cliamp-wrapper
 
 A native macOS app that runs [cliamp](https://github.com/bjarneo/cliamp)
-inside an embedded [Ghostty](https://ghostty.org) terminal. The app is a
-small Swift/AppKit shell around `libghostty` (the full embedder API: VT core,
-Metal renderer, PTY, input encoding).
-
-libghostty is built from Ghostty `main` on purpose: the embedder API is still
-unstable and the prebuilt packages track older tagged releases. Targets
-macOS 26 on Apple Silicon only.
+inside an embedded [Ghostty](https://ghostty.org) terminal. Written in
+Swift/AppKit for macOS 26 on Apple Silicon. Ghostty is built from the revision
+pinned by the `vendor/ghostty` submodule; cliamp is installed separately.
 
 ## Requirements
 
 - macOS 26, Xcode 26 with the Metal toolchain
-- Zig 0.16.x (`brew install zig`); Ghostty main pins the exact minor and its build says so if yours differs
+- Zig 0.16.x on `PATH` (see [Ghostty's version requirement](vendor/ghostty/build.zig.zon))
 - `cliamp` installed (`brew install bjarneo/cliamp/cliamp` or `~/.local/bin/cliamp`)
-
-The build uses `zig` from PATH. If multiple versions are installed, put the
-required version first and confirm with `zig version`.
 
 ## Build
 
 ```sh
-git submodule update --init --depth 1   # vendor/ghostty
-make app                                # libghostty, the Swift app, build/Cliamp.app
-make run
-swift test                              # focused Swift tests (requires GhosttyKit)
+make app       # builds GhosttyKit and build/Cliamp.app
+make run       # builds and opens the app
+swift test     # requires GhosttyKit from the build above
 ```
+
+The build initializes the Ghostty submodule if needed. The app includes its
+icon, terminfo and Ghostty resources, and is ad-hoc signed. Set `VERSION` and
+`BUILD_NUMBER` to override the bundle version fields.
 
 | Target | What it does |
 |--------|--------------|
-| `make ghosttykit` | `zig build -Doptimize=ReleaseFast -Demit-macos-app=false -Dxcframework-target=native` in `vendor/ghostty`, producing `macos/GhosttyKit.xcframework`. About 3 minutes cold, a few seconds when nothing changed. |
-| `make build` | checks GhosttyKit is current, then `swift build -c release` (no bundle) |
-| `make app` | assembles `build/Cliamp.app` with icon, terminfo, themes and an ad-hoc signature (`VERSION` and `BUILD_NUMBER` env vars are honoured) |
-| `make install` | copies the app into `/Applications` (override with `INSTALL_DIR=~/Applications`) |
-| `make distclean` | removes Zig caches and the xcframework |
+| `make ghosttykit` | Builds `vendor/ghostty/macos/GhosttyKit.xcframework` for the host architecture. |
+| `make build` | Builds GhosttyKit and the release executable without an app bundle. |
+| `make install` | Builds and copies the app into `/Applications` (override with `INSTALL_DIR=~/Applications`). |
+| `make clean` | Removes Swift build output and the app bundle. |
+| `make distclean` | Also removes Ghostty build output, Zig caches and the xcframework. |
 
-## How it works
+## Running cliamp
 
-- `scripts/build-ghosttykit.sh` builds Ghostty's C library as an xcframework;
-  `Package.swift` links it as a binary target.
-- `GhosttyHost.swift` initialises libghostty, loads `Resources/ghostty.conf`
-  (plus `~/.config/cliamp-wrapper/ghostty.conf` if present), creates the app
-  and the single surface with the launcher as its command, and implements
-  the runtime callbacks (wakeup, actions, clipboard, close). The command is
-  set on the surface; `command` in a config file is ignored, and
-  `initial-command` is reserved and must not be set.
-- `TerminalView.swift` is the NSView libghostty renders into. It forwards
-  keys (including IME, dead keys and command-chord releases), mouse, scroll,
-  focus, size and scale the same way Ghostty's own macOS app does.
-- `CommandResolver.swift` finds cliamp in `~/.local/bin`, `/opt/homebrew/bin`,
-  `/usr/local/bin`, then `PATH`. `CLIAMP_WRAPPER_EXEC=/path/to/binary` is
-  used instead; a bad path fails visibly inside the terminal. Search directories
-  and the override are normalized to absolute paths relative to the wrapper's
-  launch directory, with `~` expanded. Empty `PATH` entries mean that directory.
-  The child receives the same normalized, deduplicated search directories in
-  `PATH`, so a different terminal working directory does not change lookup.
-- The command is a short `sh` launcher that runs cliamp and writes its exit
-  status to a temp file. Ghostty on macOS runs commands under `/usr/bin/login`,
-  which always exits 0, so this is the only way to know how cliamp ended.
-  Status 0 quits the app; anything else keeps the output visible and shows a
-  banner until a key is pressed.
+The wrapper searches `~/.local/bin`, `/opt/homebrew/bin`, `/usr/local/bin`,
+then `PATH`. Set `CLIAMP_WRAPPER_EXEC` to use a specific executable:
+
+```sh
+CLIAMP_WRAPPER_EXEC=/path/to/cliamp build/Cliamp.app/Contents/MacOS/Cliamp
+```
+
+Search paths and the override expand `~` and resolve relative to the wrapper's
+launch directory. Empty `PATH` entries refer to that directory. The child gets
+the same normalized search path and starts in the user's home directory.
+
+A shell launcher records cliamp's exit status in a temporary file. Status 0
+quits the app; other or unavailable statuses leave the output visible with a
+banner until a key is pressed.
 
 ## Configuration
 
-Edit `Resources/ghostty.conf` (rebuild) or create
+Edit [Resources/ghostty.conf](Resources/ghostty.conf) (rebuild) or create
 `~/.config/cliamp-wrapper/ghostty.conf` (no rebuild). Options that libghostty
 itself implements work, for example `font-family`, `font-size`, `theme`,
 `window-padding-*`, and `config-file` to pull in more files. Options that
 only Ghostty's own app implements (tabs, splits, window state, initial
 window size) have no effect; the window remembers its last frame instead.
 
-Default keybinds are cleared so cliamp sees every key. Copy, paste, select
-all, font size and full screen are menu items with the usual shortcuts.
+The command is set on the surface. Config-file `command` settings are ignored;
+`initial-command` must not be set.
+
+Default Ghostty keybindings are cleared. Copy, paste, select all, font size and
+full screen are menu items with the usual shortcuts.
 
 Light/dark theme pairs (`theme = light:…,dark:…`) follow the system appearance.
-The titlebar follows the terminal background for contrast. Config files are
+The titlebar follows the terminal background. Config files are
 loaded at launch; appearance changes reapply that config without rereading files.
 
 Links in terminal output open on Cmd+click only for `http`, `https` and
@@ -94,12 +84,20 @@ git -C vendor/ghostty checkout FETCH_HEAD
 make app
 ```
 
-libghostty's embedder API is not stable. If the build breaks after an update,
-compare `vendor/ghostty/include/ghostty.h` against the callbacks in
-`GhosttyHost.swift`, `Clipboard.swift` and `TerminalView.swift`.
+The embedder API is unstable. Its declarations are in
+[ghostty.h](vendor/ghostty/include/ghostty.h); updating the submodule may require
+changes to the Swift callbacks.
 
-See `docs/ghostty-wrapper-research.md` for the survey of alternative
-approaches (libghostty-spm, Trolley, driving Ghostty.app directly).
+## Source layout
+
+- [AppDelegate.swift](Sources/CliampWrapper/AppDelegate.swift): window, menus and app lifecycle.
+- [GhosttyHost.swift](Sources/CliampWrapper/GhosttyHost.swift): libghostty ownership, configuration and runtime callbacks.
+- [TerminalView.swift](Sources/CliampWrapper/TerminalView.swift), [Input.swift](Sources/CliampWrapper/Input.swift) and [Clipboard.swift](Sources/CliampWrapper/Clipboard.swift): rendering surface and input integration.
+- [CommandResolver.swift](Sources/CliampWrapper/CommandResolver.swift): executable lookup and launcher.
+- [WrapperConfig.swift](Sources/CliampWrapper/WrapperConfig.swift): app defaults.
+- [TitleToolbar.swift](Sources/CliampWrapper/TitleToolbar.swift): centered window title.
+- [scripts/](scripts/): GhosttyKit build and app packaging; [Package.swift](Package.swift) links the xcframework.
+- [Tests/](Tests/): command lookup, modifier handling and theme tests.
 
 ## License
 
